@@ -1,0 +1,63 @@
+﻿@using System.Net.Http
+@using System.Net.Http.Json
+@using System.Threading.Tasks
+@using AppCentroAguas.Models
+@using System.Collections.Generic;
+@using System.Linq;
+@inject HttpClient Http
+
+@page "/"
+
+@if (categories == null)
+{
+    <p>No Todo Items found.</p>
+}
+else
+{
+    <div>
+        @foreach (var category in categories)
+        {
+            <details>
+                <summary>
+                    @category.Name
+                </summary>
+                <div>
+                    @foreach(var movie in category.Movies)
+                    {
+                        <div>
+                            <span>@movie.Title</span>
+                            <img src="@movie.PhotoUrL"/>
+                        </div>
+                    }
+                </div>
+            </details>
+        }
+    </div>
+}
+
+@code {
+    private Response? response;
+    private List<Category> categories;
+
+    protected override async Task OnInitializedAsync()
+    {       
+        response = await Http.GetFromJsonAsync<Response>("http://localhost:8080/api/movies");
+        categories = GetCategories(response.Movies);
+
+    }
+
+    public List<Category> GetCategories(List<Movie> movies) {
+        var result = from movie in movies
+                     group movie by movie.Category;
+
+        var categories = new List<Category>();
+        foreach(var category in result)
+        {
+            categories.Add(new Category() {
+                    Name = category.Key,
+                    Movies = category.ToList()
+            });
+        }
+        return categories.OrderBy(c => c.Name).ToList();
+    }
+}
